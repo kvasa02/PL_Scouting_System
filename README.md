@@ -2,12 +2,12 @@
 
 A Streamlit dashboard that compares Premier League players by statistical playstyle. The app standardizes player per-90 metrics, computes cosine-similarity matches, and uses K-Means clustering to group players into tactical archetypes.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![pandas](https://img.shields.io/badge/pandas-Data%20Analysis-150458?style=for-the-badge&logo=pandas&logoColor=white)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white)
-![matplotlib](https://img.shields.io/badge/matplotlib-Visualization-11557C?style=for-the-badge)
-![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-FACC15?style=for-the-badge)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![pandas](https://img.shields.io/badge/pandas-Data%20Analysis-150458.svg)](https://pandas.pydata.org/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-Machine%20Learning-F7931E.svg)](https://scikit-learn.org/)
+[![matplotlib](https://img.shields.io/badge/matplotlib-Visualization-11557C.svg)](https://matplotlib.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B.svg)](https://streamlit.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ![Premier League scouting dashboard demo](assets/pl-scouting-demo.gif)
 
