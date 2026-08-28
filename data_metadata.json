@@ -1,0 +1,11 @@
+{
+  "source": "Fantasy Premier League public bootstrap-static API",
+  "source_url": "https://fantasy.premierleague.com/api/bootstrap-static/",
+  "fetched_at_utc": "2026-08-28T23:01:43+00:00",
+  "players": 317,
+  "teams": 20,
+  "latest_checked_gameweek": "Gameweek 1",
+  "current_gameweek": "Gameweek 2",
+  "next_gameweek": "Gameweek 3",
+  "notes": "FPL exposes goals, assists, expected goals/assists, ICT creativity/threat/influence, tackles, recoveries, minutes, price, ownership, and availability. Passing, shots, and dribble event detail are approximated through Creativity, Threat, and defensive action feature groups unless a richer event-data provider is connected."
+}
