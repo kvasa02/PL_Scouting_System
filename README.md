@@ -2,6 +2,8 @@
 
 A Streamlit dashboard that compares Premier League players by statistical playstyle. The app standardizes player per-90 metrics, computes cosine-similarity matches, and uses K-Means clustering to group players into tactical archetypes.
 
+![Premier League scouting dashboard demo](assets/pl-scouting-demo.gif)
+
 ## Features
 
 - Live data refresh from the public Fantasy Premier League bootstrap API
