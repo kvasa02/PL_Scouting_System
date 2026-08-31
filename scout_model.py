@@ -5,7 +5,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
-os.environ.setdefault("LOKY_MAX_CPU_COUNT", str(os.cpu_count() or 1))
+if not os.environ.get("LOKY_MAX_CPU_COUNT"):
+    os.environ["LOKY_MAX_CPU_COUNT"] = str(os.cpu_count() or 1)
 warnings.filterwarnings("ignore", message="Could not find the number of physical cores.*")
 warnings.filterwarnings("ignore", category=UserWarning, module="joblib.externals.loky.backend.context")
 

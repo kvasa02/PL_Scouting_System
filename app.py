@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -6,6 +5,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from database import DB_FILE, database_metadata, latest_features, snapshots_summary
 from fetch_real_data import refresh_dataset
 from scout_model import (
     DEFAULT_FEATURES,
@@ -19,7 +19,6 @@ from scout_model import (
 
 
 DATA_FILE = Path("premier_league_stats.csv")
-METADATA_FILE = Path("data_metadata.json")
 
 
 st.set_page_config(
@@ -52,23 +51,31 @@ st.markdown(
 
 @st.cache_data(show_spinner=False)
 def load_data() -> pd.DataFrame:
-    if not DATA_FILE.exists():
+    try:
+        df = latest_features(DB_FILE)
+        if not df.empty:
+            return df
+    except Exception:
+        pass
+
+    if DATA_FILE.exists():
+        return pd.read_csv(DATA_FILE)
+
+    try:
         df, _ = refresh_dataset()
         return df
-    return pd.read_csv(DATA_FILE)
+    except Exception:
+        return pd.DataFrame()
 
 
 @st.cache_data(show_spinner=False)
 def load_metadata() -> dict:
-    if METADATA_FILE.exists():
-        return json.loads(METADATA_FILE.read_text(encoding="utf-8"))
-    return {
-        "source": "Local CSV",
-        "source_url": "",
-        "fetched_at_utc": "Unknown",
-        "latest_checked_gameweek": "Unknown",
-        "notes": "Run python fetch_real_data.py to refresh the dataset.",
-    }
+    return database_metadata(DB_FILE)
+
+
+@st.cache_data(show_spinner=False)
+def load_snapshots() -> pd.DataFrame:
+    return snapshots_summary(DB_FILE)
 
 
 def draw_radar_chart(
@@ -149,6 +156,11 @@ def draw_cluster_map(df: pd.DataFrame, selected_index: int) -> plt.Figure:
 
 df = load_data()
 metadata = load_metadata()
+snapshot_df = load_snapshots()
+
+if df.empty:
+    st.error("No player data is available. Run python fetch_real_data.py to create the first SQL snapshot.")
+    st.stop()
 
 features_in_data = available_features(df)
 if not features_in_data:
@@ -156,8 +168,9 @@ if not features_in_data:
     st.stop()
 
 st.sidebar.title("Scout Controls")
-if st.sidebar.button("Refresh Live Data", width="stretch"):
-    with st.spinner("Fetching current Premier League player data..."):
+st.sidebar.caption(f"Database: {DB_FILE}")
+if st.sidebar.button("Append Live Snapshot", width="stretch"):
+    with st.spinner("Fetching current Premier League player data and appending a SQL snapshot..."):
         df, metadata = refresh_dataset()
         st.cache_data.clear()
         st.rerun()
@@ -214,15 +227,16 @@ matches = similar_players(
 
 st.title("Premier League Player Scouting System")
 st.caption(
-    "Similarity search and K-Means playing-style clusters built with pandas, scikit-learn, matplotlib, and Streamlit."
+    "SQLite-backed historical snapshots with SQL feature views, pandas, scikit-learn, matplotlib, and Streamlit."
 )
 
-metric_cols = st.columns(5)
+metric_cols = st.columns(6)
 metric_cols[0].metric("Target", target_row["Display_Name"], target_row["Team_Short"])
 metric_cols[1].metric("Position", target_row["Position_Full"])
 metric_cols[2].metric("Minutes", f"{int(target_row['Minutes']):,}")
 metric_cols[3].metric("Archetype", target_row["Archetype"])
-metric_cols[4].metric(
+metric_cols[4].metric("Snapshots", int(metadata.get("snapshots", 0)))
+metric_cols[5].metric(
     "Silhouette",
     "N/A" if model.silhouette is None else f"{model.silhouette:.2f}",
 )
@@ -269,10 +283,12 @@ with profile_right:
         "Assists": int(target_row.get("Assists", 0)),
         "xG": float(target_row.get("Expected_Goals", 0)),
         "xA": float(target_row.get("Expected_Assists", 0)),
+        "Rolling Form": float(target_row.get("Rolling_Form_Last5", 0)),
+        "Rolling xGI": float(target_row.get("Rolling_xGI_p90_Last5", 0) or 0),
         "Cost": f"GBP {float(target_row.get('Cost_M', 0)):.1f}m",
         "Selected": f"{float(target_row.get('Selected_By_%', 0)):.1f}%",
     }
-    stat_cols = st.columns(3)
+    stat_cols = st.columns(4)
     for idx, (label, value) in enumerate(totals.items()):
         stat_cols[idx % 3].metric(label, value)
     if str(target_row.get("News", "")).strip():
@@ -351,6 +367,9 @@ with tabs[3]:
         st.markdown(f"**Source:** {source_text}")
     st.markdown(f"**Fetched at UTC:** {metadata.get('fetched_at_utc', 'Unknown')}")
     st.markdown(f"**Latest checked gameweek:** {metadata.get('latest_checked_gameweek', 'Unknown')}")
+    st.markdown(f"**SQLite snapshots stored:** {metadata.get('snapshots', 0)}")
+    if not snapshot_df.empty:
+        st.dataframe(snapshot_df, hide_index=True, width="stretch")
     st.markdown(
         '<p class="small-note">'
         + str(metadata.get("notes", ""))
@@ -358,7 +377,7 @@ with tabs[3]:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<p class="small-note">The similarity model standardizes selected per-90 features, computes cosine similarity, '
-        'and labels K-Means clusters from each cluster&apos;s strongest feature profile.</p>',
+        '<p class="small-note">The dashboard reads from v_latest_player_features. SQLite computes per-90 features, '
+        'weekly deltas, and rolling last-5-snapshot values before pandas passes the feature matrix into scikit-learn.</p>',
         unsafe_allow_html=True,
     )

@@ -6,6 +6,7 @@ from urllib.request import Request, urlopen
 
 import pandas as pd
 
+from database import DB_FILE, database_metadata, latest_features, save_fpl_snapshot
 
 FPL_BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
 OUTPUT_FILE = Path("premier_league_stats.csv")
@@ -131,7 +132,9 @@ def build_scouting_dataset(payload: dict, min_minutes: int = 1) -> tuple[pd.Data
 
 def refresh_dataset(output_file: Path = OUTPUT_FILE) -> tuple[pd.DataFrame, dict]:
     payload = fetch_bootstrap_static()
-    scout_df, metadata = build_scouting_dataset(payload)
+    save_fpl_snapshot(payload, DB_FILE)
+    scout_df = latest_features(DB_FILE)
+    metadata = database_metadata(DB_FILE)
     scout_df.to_csv(output_file, index=False)
     METADATA_FILE.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return scout_df, metadata
@@ -140,4 +143,5 @@ def refresh_dataset(output_file: Path = OUTPUT_FILE) -> tuple[pd.DataFrame, dict
 if __name__ == "__main__":
     df, info = refresh_dataset()
     print(f"Saved {len(df)} current Premier League player rows to {OUTPUT_FILE}.")
+    print(f"Appended snapshot to {DB_FILE}.")
     print(f"Latest checked gameweek: {info['latest_checked_gameweek']}")
